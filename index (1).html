@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ListingAgent — StayVista GBP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ── TOKENS ──────────────────────────────────────────────────── */
+:root {
+  --bg:         #0C0C0C;
+  --surface:    #131313;
+  --card:       #191919;
+  --card-hover: #1E1E1E;
+  --border:     #252525;
+  --border-mid: #303030;
+  --text:       #F0EBE3;
+  --muted:      #7A7A7A;
+  --dim:        #555;
+  --gold:       #D4A853;
+  --gold-lt:    #E8C97D;
+  --gold-dim:   #D4A85315;
+  --gold-mid:   #D4A85335;
+  --green:      #5CA870;
+  --green-dim:  #5CA87015;
+  --red:        #C96060;
+  --red-dim:    #C9606015;
+  --warn:       #C8884A;
+  --warn-dim:   #C8884A15;
+  --sky:        #6AA0BE;
+  --r:          8px;
+}
+
+/* ── RESET ───────────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;line-height:1.5;min-height:100vh;-webkit-font-smoothing:antialiased}
+button{font-family:'DM Sans',sans-serif;cursor:pointer;border:none;background:none}
+input,textarea{font-family:'DM Sans',sans-serif;font-size:14px}
+a{color:inherit;text-decoration:none}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border-mid);border-radius:4px}
+
+/* ── NAV ─────────────────────────────────────────────────────── */
+#nav{
+  position:sticky;top:0;z-index:200;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 28px;height:52px;
+  background:var(--bg);border-bottom:1px solid var(--border);
+  backdrop-filter:blur(12px);
+}
+.logo{font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:var(--gold-lt);letter-spacing:.3px}
+.logo em{color:var(--text);font-style:normal;font-weight:600}
+.user-pill{display:flex;align-items:center;gap:8px;padding:4px 12px 4px 5px;background:var(--card);border:1px solid var(--border);border-radius:99px;font-size:12.5px}
+.user-pill img{width:22px;height:22px;border-radius:50%;object-fit:cover;flex-shrink:0}
+.user-pill .name{color:var(--text)}
+.user-pill .signout{color:var(--muted);font-size:11px;margin-left:6px;cursor:pointer;text-decoration:underline;background:none;border:none;padding:0;font-family:inherit}
+.user-pill .signout:hover{color:var(--text)}
+
+/* ── SCREEN SYSTEM ───────────────────────────────────────────── */
+.screen{display:none;max-width:880px;margin:0 auto;padding:40px 24px}
+.screen.active{display:block}
+
+/* ── LANDING ─────────────────────────────────────────────────── */
+#screen-landing{max-width:580px;text-align:center;padding-top:96px}
+.eyebrow{display:inline-flex;align-items:center;gap:6px;padding:4px 14px;background:var(--gold-dim);border:1px solid var(--gold-mid);border-radius:99px;font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:28px}
+.h1{font-family:'Playfair Display',serif;font-size:44px;font-weight:700;line-height:1.1;margin-bottom:16px;letter-spacing:-.5px}
+.h1 em{color:var(--gold-lt);font-style:normal}
+.sub{font-size:15px;color:var(--muted);line-height:1.7;margin-bottom:40px;max-width:400px;margin-left:auto;margin-right:auto}
+.google-btn{
+  display:inline-flex;align-items:center;gap:11px;
+  padding:13px 28px;background:var(--text);color:#111;
+  border-radius:var(--r);font-size:14px;font-weight:600;
+  transition:all .15s;border:none;cursor:pointer;
+}
+.google-btn:hover{background:#fff;box-shadow:0 8px 40px rgba(0,0,0,.5);transform:translateY(-1px)}
+.google-btn svg{width:18px;height:18px;flex-shrink:0}
+.features{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:52px;text-align:left}
+.feat{padding:16px;background:var(--card);border:1px solid var(--border);border-radius:var(--r)}
+.feat-icon{font-size:18px;margin-bottom:8px}
+.feat-title{font-size:12px;font-weight:600;margin-bottom:3px}
+.feat-desc{font-size:11.5px;color:var(--muted);line-height:1.55}
+.err-banner{padding:10px 16px;background:var(--red-dim);border:1px solid var(--red)33;border-radius:var(--r);color:var(--red);font-size:13px;margin-bottom:20px;display:none}
+
+/* ── LOCATIONS ───────────────────────────────────────────────── */
+.page-title{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;margin-bottom:4px}
+.page-sub{font-size:13px;color:var(--muted);margin-bottom:24px}
+.search-bar{width:100%;padding:10px 14px;background:var(--card);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-size:13.5px;margin-bottom:16px;outline:none;transition:border .15s}
+.search-bar:focus{border-color:var(--gold)}
+.search-bar::placeholder{color:var(--dim)}
+.loc-grid{display:flex;flex-direction:column;gap:8px}
+.loc-card{
+  display:grid;grid-template-columns:44px 1fr auto;align-items:center;gap:14px;
+  padding:14px 18px;background:var(--card);border:1px solid var(--border);
+  border-radius:var(--r);cursor:pointer;transition:all .15s;
+}
+.loc-card:hover{background:var(--card-hover);border-color:var(--gold-mid);transform:translateX(2px)}
+.loc-icon{width:40px;height:40px;background:var(--gold-dim);border:1px solid var(--gold-mid);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.loc-name{font-weight:600;font-size:13.5px;margin-bottom:2px}
+.loc-meta{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.loc-arrow{color:var(--gold);font-size:18px;flex-shrink:0}
+.no-locs{text-align:center;padding:48px 0;color:var(--muted)}
+.no-locs-icon{font-size:32px;margin-bottom:12px}
+
+/* ── LOADING ─────────────────────────────────────────────────── */
+#screen-loading{text-align:center;padding-top:100px;max-width:400px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 20px}
+.load-title{font-family:'Playfair Display',serif;font-size:20px;margin-bottom:6px}
+.load-sub{font-size:13px;color:var(--muted);margin-bottom:24px}
+.load-steps{display:flex;flex-direction:column;gap:6px;text-align:left;max-width:280px;margin:0 auto}
+.load-step{font-size:12.5px;color:var(--dim);display:flex;align-items:center;gap:8px;transition:color .3s}
+.load-step.s-active{color:var(--gold)}
+.load-step.s-done{color:var(--green)}
+
+/* ── AUDIT ───────────────────────────────────────────────────── */
+.back-btn{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);margin-bottom:20px;padding:0;background:none;border:none;font-family:inherit;cursor:pointer;transition:color .15s}
+.back-btn:hover{color:var(--text)}
+.audit-hd{display:flex;align-items:flex-start;gap:20px;padding:20px 22px;background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin-bottom:20px}
+.audit-hd-left{flex:1;min-width:0}
+.audit-biz{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.audit-meta{font-size:12px;color:var(--muted);margin-bottom:10px}
+.pill-row{display:flex;gap:6px;flex-wrap:wrap}
+.pill{padding:2px 9px;border-radius:99px;font-size:11px;font-weight:600}
+.pill-red{background:var(--red-dim);color:var(--red)}
+.pill-warn{background:var(--warn-dim);color:var(--warn)}
+.pill-green{background:var(--green-dim);color:var(--green)}
+.pill-info{background:#ffffff10;color:var(--muted)}
+.score-ring{text-align:center;flex-shrink:0;min-width:72px}
+.score-num{font-family:'Playfair Display',serif;font-size:40px;font-weight:700;line-height:1}
+.score-lbl{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-top:2px}
+
+/* ── TABS ────────────────────────────────────────────────────── */
+.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:20px;overflow-x:auto}
+.tab{padding:9px 18px;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;transition:all .15s;flex-shrink:0}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+
+/* ── AUDIT ITEMS ─────────────────────────────────────────────── */
+.audit-group{margin-bottom:8px}
+.audit-group-hd{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 16px;background:var(--card);border:1px solid var(--border);
+  border-radius:var(--r);cursor:pointer;user-select:none;
+}
+.audit-group-hd:hover{background:var(--card-hover)}
+.audit-group-label{font-size:12px;font-weight:600;display:flex;align-items:center;gap:8px}
+.audit-group-count{font-size:11px;color:var(--muted)}
+.audit-group-body{padding:0 16px;background:var(--card);border:1px solid var(--border);border-top:none;border-radius:0 0 var(--r) var(--r);display:none}
+.audit-group-body.open{display:block}
+.audit-item{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)44}
+.audit-item:last-child{border-bottom:none}
+.status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.audit-item-main{flex:1;min-width:0}
+.audit-item-title{font-size:13px;font-weight:600;margin-bottom:2px}
+.audit-item-detail{font-size:12px;color:var(--muted);line-height:1.5}
+.audit-item-fix{font-size:11.5px;color:var(--warn);margin-top:4px}
+
+/* ── CONTENT CARDS ───────────────────────────────────────────── */
+.content-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin-bottom:12px;overflow:hidden}
+.content-card-hd{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border)}
+.content-card-title{font-size:11px;font-weight:600;letter-spacing:1.8px;text-transform:uppercase;color:var(--muted)}
+.content-card-body{padding:16px 18px}
+.current-text{font-size:12.5px;color:var(--dim);line-height:1.6;padding:10px 12px;background:var(--surface);border-radius:6px;border-left:2px solid var(--dim);margin-bottom:10px}
+.generated-text{font-size:12.5px;color:var(--text);line-height:1.6;padding:10px 12px;background:var(--green-dim);border-radius:6px;border-left:2px solid var(--green);margin-bottom:10px;outline:none}
+.generated-text[contenteditable=true]{border-left-color:var(--gold);background:var(--gold-dim)}
+.char-count{font-size:11px;color:var(--dim);margin-bottom:10px;font-family:'DM Mono',monospace}
+.generate-placeholder{padding:20px;text-align:center}
+.gen-icon{font-size:24px;margin-bottom:8px}
+.gen-desc{font-size:12.5px;color:var(--muted);margin-bottom:14px;line-height:1.5}
+
+/* Post grid */
+.posts-grid{display:flex;flex-direction:column;gap:10px}
+.post-item{padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r)}
+.post-theme{font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);margin-bottom:6px}
+.post-text{font-size:13px;color:var(--text);line-height:1.55;margin-bottom:10px;outline:none}
+.post-text[contenteditable=true]{background:var(--gold-dim);padding:6px 8px;border-radius:4px}
+
+/* FAQ list */
+.faq-list{display:flex;flex-direction:column;gap:0}
+.faq-item{padding:12px 0;border-bottom:1px solid var(--border)44}
+.faq-item:last-child{border-bottom:none}
+.faq-q{font-size:13px;font-weight:600;margin-bottom:4px;color:var(--text)}
+.faq-a{font-size:12.5px;color:var(--muted);line-height:1.55;margin-bottom:8px;outline:none}
+.faq-a[contenteditable=true]{color:var(--text);background:var(--gold-dim);padding:5px 8px;border-radius:4px}
+
+/* ── BUTTONS ─────────────────────────────────────────────────── */
+.btn-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:6px;font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .15s;border:none}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-gold{background:var(--gold);color:#111}
+.btn-gold:hover:not(:disabled){background:var(--gold-lt)}
+.btn-outline{background:transparent;border:1px solid var(--border-mid);color:var(--muted)}
+.btn-outline:hover:not(:disabled){border-color:var(--gold);color:var(--gold)}
+.btn-ghost{background:transparent;color:var(--muted)}
+.btn-ghost:hover{color:var(--text)}
+.btn-green{background:var(--green);color:#fff}
+.status-tag{padding:3px 10px;border-radius:99px;font-size:11px;font-weight:600}
+.tag-pending{background:var(--warn-dim);color:var(--warn)}
+.tag-live{background:var(--green-dim);color:var(--green)}
+.tag-failed{background:var(--red-dim);color:var(--red)}
+
+/* ── REVIEWS ─────────────────────────────────────────────────── */
+.review-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px}
+.review-stat{padding:12px 14px;background:var(--card);border:1px solid var(--border);border-radius:var(--r);text-align:center}
+.review-stat-n{font-family:'Playfair Display',serif;font-size:24px;font-weight:700}
+.review-stat-l{font-size:11px;color:var(--muted);margin-top:2px}
+.review-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;margin-bottom:10px}
+.review-card-hd{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.review-avatar{width:34px;height:34px;border-radius:50%;background:var(--gold-dim);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;overflow:hidden}
+.review-avatar img{width:100%;height:100%;object-fit:cover}
+.review-name{font-weight:600;font-size:13px}
+.review-date{font-size:11px;color:var(--muted)}
+.stars{color:var(--gold);letter-spacing:1px;font-size:13px}
+.review-text{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:12px}
+.reply-draft{font-size:12.5px;color:var(--text);line-height:1.55;padding:10px 12px;background:var(--surface);border-radius:6px;border-left:2px solid var(--gold);margin-bottom:10px;outline:none}
+.reply-draft[contenteditable=true]{background:var(--gold-dim)}
+.queue-timer{font-size:11.5px;color:var(--warn);font-family:'DM Mono',monospace}
+.queue-section-title{font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin:16px 0 10px}
+
+/* ── TRAINING ────────────────────────────────────────────────── */
+.training-intro{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:20px;padding:14px 16px;background:var(--gold-dim);border:1px solid var(--gold-mid);border-radius:var(--r)}
+.training-form{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.training-label{font-size:11px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+textarea.field{width:100%;padding:10px 12px;background:var(--card);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-size:12.5px;line-height:1.55;resize:vertical;min-height:90px;outline:none;transition:border .15s}
+textarea.field:focus{border-color:var(--gold)}
+textarea.field::placeholder{color:var(--dim)}
+.example-list{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+.example-item{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:start;padding:12px 14px;background:var(--card);border:1px solid var(--border);border-radius:var(--r)}
+.example-col{font-size:12px;color:var(--muted);line-height:1.5}
+.example-col strong{display:block;font-size:10px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--dim);margin-bottom:3px}
+.del-btn{background:none;border:none;color:var(--dim);cursor:pointer;font-size:16px;line-height:1;padding:2px 4px;transition:color .15s}
+.del-btn:hover{color:var(--red)}
+
+/* ── MISC ────────────────────────────────────────────────────── */
+.divider{height:1px;background:var(--border);margin:16px 0}
+.section-label{font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:8px}
+.empty{text-align:center;padding:32px 0;color:var(--muted)}
+.empty-icon{font-size:28px;margin-bottom:8px}
+.inline-err{padding:8px 12px;background:var(--red-dim);border:1px solid var(--red)33;border-radius:6px;color:var(--red);font-size:12.5px;margin-bottom:8px}
+
+@media(max-width:640px){
+  .training-form{grid-template-columns:1fr}
+  .features{grid-template-columns:1fr}
+  .example-item{grid-template-columns:1fr;grid-template-rows:auto auto auto}
+  .review-stats{grid-template-columns:repeat(3,1fr)}
+}
+</style>
+</head>
+<body>
+
+<!-- ── NAV ──────────────────────────────────────────────────── -->
+<nav id="nav">
+  <div class="logo">Listing<em>Agent</em></div>
+  <div id="nav-user" style="display:none"></div>
+</nav>
+
+<!-- ── SCREEN: LANDING ──────────────────────────────────────── -->
+<div class="screen active" id="screen-landing">
+  <div class="eyebrow">✦ StayVista Internal Tool</div>
+  <h1 class="h1">Your listings,<br><em>always complete</em></h1>
+  <p class="sub">Sign in with the Google account that manages your Business Profile listings. No keys, no setup — it just works.</p>
+  <div class="err-banner" id="auth-err"></div>
+  <button class="google-btn" onclick="signIn()">
+    <svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+    Continue with Google
+  </button>
+  <div class="features">
+    <div class="feat"><div class="feat-icon">⚡</div><div class="feat-title">Instant free audit</div><div class="feat-desc">14-point check of every listing — no tokens spent until you ask for content.</div></div>
+    <div class="feat"><div class="feat-icon">✦</div><div class="feat-title">AI content agent</div><div class="feat-desc">Descriptions, posts, Q&A — generated from your actual property page, not generic templates.</div></div>
+    <div class="feat"><div class="feat-icon">↑</div><div class="feat-title">One-click publish</div><div class="feat-desc">Review, edit if needed, publish directly to GBP. No copy-pasting anywhere.</div></div>
+  </div>
+</div>
+
+<!-- ── SCREEN: LOCATIONS ─────────────────────────────────────── -->
+<div class="screen" id="screen-locations">
+  <div class="page-title">Your Properties</div>
+  <p class="page-sub">All Google Business Profile listings on your account.</p>
+  <input class="search-bar" id="loc-search" placeholder="Search by name or location…" oninput="filterLocations()" autocomplete="off">
+  <div class="loc-grid" id="loc-list"></div>
+</div>
+
+<!-- ── SCREEN: LOADING ────────────────────────────────────────── -->
+<div class="screen" id="screen-loading">
+  <div style="text-align:center;padding-top:80px;max-width:360px;margin:0 auto">
+    <div class="spinner"></div>
+    <div class="load-title" id="load-title">Loading your listings…</div>
+    <div class="load-sub" id="load-sub">This takes a few seconds</div>
+    <div class="load-steps" id="load-steps"></div>
+  </div>
+</div>
+
+<!-- ── SCREEN: AUDIT ──────────────────────────────────────────── -->
+<div class="screen" id="screen-audit">
+  <button class="back-btn" onclick="goBack()">← Back to properties</button>
+  <div class="audit-hd" id="audit-hd"></div>
+  <div class="tabs">
+    <div class="tab active" data-tab="overview" onclick="switchTab('overview')">Overview</div>
+    <div class="tab" data-tab="content" onclick="switchTab('content')">✦ Content</div>
+    <div class="tab" data-tab="reviews" onclick="switchTab('reviews')">Reviews</div>
+    <div class="tab" data-tab="training" onclick="switchTab('training')">Training</div>
+  </div>
+  <div id="tab-overview"></div>
+  <div id="tab-content" style="display:none"></div>
+  <div id="tab-reviews" style="display:none"></div>
+  <div id="tab-training" style="display:none"></div>
+</div>
+
+<script>
+'use strict';
+
+/* ══════════════════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════════════════ */
+const S = {
+  user:           null,
+  locations:      [],
+  filtered:       [],
+  currentLoc:     null,   // selected location object
+  auditData:      null,   // { profile, checks, score }
+  generated:      {},     // { description, posts, faqs }
+  reviews:        null,   // { reviews, total, unanswered, avgRating }
+  // Persisted in localStorage
+  training:       loadLS('sv_training', []),
+  replyQueue:     loadLS('sv_reply_queue', []),
+};
+
+function loadLS(key, def) {
+  try { return JSON.parse(localStorage.getItem(key) || 'null') || def; }
+  catch { return def; }
+}
+function saveLS(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
+}
+
+/* ══════════════════════════════════════════════════════════
+   BOOT
+══════════════════════════════════════════════════════════ */
+(async function boot() {
+  const p = new URLSearchParams(location.search);
+
+  // Show auth error if redirected back with error
+  if (p.get('auth_error')) {
+    const el = document.getElementById('auth-err');
+    el.textContent = p.get('auth_error');
+    el.style.display = 'block';
+    history.replaceState({}, '', '/');
+    return;
+  }
+
+  // Came back from Google sign-in
+  if (p.get('auth') === '1') {
+    history.replaceState({}, '', '/');
+  }
+
+  // Check if already signed in
+  await tryLoadLocations();
+
+  // Process any overdue auto-reply queue items
+  processReplyQueue();
+})();
+
+async function tryLoadLocations() {
+  const r = await apiFetch('GET', '/api/locations');
+  if (!r.ok) return; // not signed in — stay on landing
+  const data = await r.json();
+  S.user = data.user;
+  S.locations = data.locations || [];
+  S.filtered  = S.locations;
+  renderNavUser();
+  showLocations();
+}
+
+/* ══════════════════════════════════════════════════════════
+   AUTH
+══════════════════════════════════════════════════════════ */
+function signIn() {
+  window.location.href = '/api/auth';
+}
+
+async function signOut() {
+  await apiFetch('POST', '/api/signout');
+  S.user = null;
+  S.locations = [];
+  document.getElementById('nav-user').style.display = 'none';
+  showScreen('landing');
+}
+
+function renderNavUser() {
+  if (!S.user) return;
+  const el = document.getElementById('nav-user');
+  el.style.display = 'flex';
+  el.innerHTML = `<div class="user-pill">
+    <img src="${esc(S.user.picture || '')}" onerror="this.style.display='none'" alt="">
+    <span class="name">${esc(S.user.name)}</span>
+    <button class="signout" onclick="signOut()">Sign out</button>
+  </div>`;
+}
+
+/* ══════════════════════════════════════════════════════════
+   LOCATIONS
+══════════════════════════════════════════════════════════ */
+function showLocations() {
+  showScreen('locations');
+  renderLocations();
+}
+
+function renderLocations() {
+  const list = document.getElementById('loc-list');
+  if (!S.filtered.length) {
+    list.innerHTML = `<div class="no-locs"><div class="no-locs-icon">🏢</div><p>${
+      S.locations.length ? 'No matching properties.' : 'No GBP listings found on this account.'
+    }</p></div>`;
+    return;
+  }
+  list.innerHTML = S.filtered.map((loc, i) => `
+    <div class="loc-card" onclick="selectLocation(${i})">
+      <div class="loc-icon">🏡</div>
+      <div style="min-width:0">
+        <div class="loc-name">${esc(loc.name)}</div>
+        <div class="loc-meta">${esc([loc.address, loc.category].filter(Boolean).join(' · '))}</div>
+      </div>
+      <div class="loc-arrow">›</div>
+    </div>`).join('');
+}
+
+function filterLocations() {
+  const q = document.getElementById('loc-search').value.toLowerCase();
+  S.filtered = q
+    ? S.locations.filter(l =>
+        l.name.toLowerCase().includes(q) || (l.address || '').toLowerCase().includes(q))
+    : S.locations;
+  renderLocations();
+}
+
+/* ══════════════════════════════════════════════════════════
+   SELECT LOCATION → RUN AUDIT
+══════════════════════════════════════════════════════════ */
+async function selectLocation(idx) {
+  // idx is index into S.filtered
+  S.currentLoc = S.filtered[idx];
+  S.generated  = {};
+  S.reviews    = null;
+
+  startLoading('Auditing listing…', 'Running 14 checks — no AI tokens used', [
+    'Connecting to Google Business Profile',
+    'Fetching listing details',
+    'Checking website status',
+    'Running 14 audit checks',
+  ]);
+
+  const r = await apiFetch('POST', '/api/audit', { locationId: S.currentLoc.id });
+  if (!r.ok) {
+    const err = await r.json().catch(() => ({ error: 'Audit failed' }));
+    alert('Audit failed: ' + err.error);
+    showLocations();
+    return;
+  }
+
+  S.auditData = await r.json();
+  showAudit();
+}
+
+/* ══════════════════════════════════════════════════════════
+   AUDIT SCREEN
+══════════════════════════════════════════════════════════ */
+function showAudit() {
+  showScreen('audit');
+  renderAuditHeader();
+  renderOverview();
+  renderContent();
+  renderTraining();
+  switchTab('overview');
+}
+
+function renderAuditHeader() {
+  const { profile, score, checks } = S.auditData;
+  const sc = score >= 70 ? 'var(--green)' : score >= 45 ? 'var(--warn)' : 'var(--red)';
+  const crit = checks.filter(c => c.status === 'fail').length;
+  const warn = checks.filter(c => c.status === 'warn').length;
+  const pass = checks.filter(c => c.status === 'pass').length;
+
+  document.getElementById('audit-hd').innerHTML = `
+    <div class="audit-hd-left">
+      <div class="audit-biz">${esc(profile.name)}</div>
+      <div class="audit-meta">${esc([profile.address, profile.category].filter(Boolean).join(' · '))}</div>
+      <div class="pill-row">
+        ${crit ? `<span class="pill pill-red">${crit} critical</span>` : ''}
+        ${warn ? `<span class="pill pill-warn">${warn} to improve</span>` : ''}
+        ${pass ? `<span class="pill pill-green">${pass} passing</span>` : ''}
+      </div>
+    </div>
+    <div class="score-ring">
+      <div class="score-num" style="color:${sc}">${score}</div>
+      <div class="score-lbl">GBP Score</div>
+    </div>`;
+}
+
+function renderOverview() {
+  const checks = S.auditData.checks;
+  const failing  = checks.filter(c => c.status === 'fail');
+  const warning  = checks.filter(c => c.status === 'warn');
+  const passing  = checks.filter(c => c.status === 'pass');
+  const info     = checks.filter(c => c.status === 'info');
+
+  document.getElementById('tab-overview').innerHTML = `
+    ${failing.length ? auditGroup('🔴 Critical — fix these first', failing, true) : ''}
+    ${warning.length ? auditGroup('🟡 Could be improved', warning, true) : ''}
+    ${passing.length ? auditGroup(`✅ Looking good (${passing.length} checks passing)`, passing, false) : ''}
+    ${info.length    ? auditGroup('ℹ Action required — see Content and Reviews tabs', info, false) : ''}
+  `;
+}
+
+function auditGroup(label, items, defaultOpen) {
+  const id = 'ag-' + Math.random().toString(36).slice(2);
+  const itemsHtml = items.map(c => {
+    const col = c.status === 'fail' ? 'var(--red)' : c.status === 'warn' ? 'var(--warn)' : c.status === 'pass' ? 'var(--green)' : 'var(--dim)';
+    return `<div class="audit-item">
+      <div class="status-dot" style="background:${col}"></div>
+      <div class="audit-item-main">
+        <div class="audit-item-title">${esc(c.title)}</div>
+        <div class="audit-item-detail">${esc(c.detail)}</div>
+        ${c.fix ? `<div class="audit-item-fix">→ ${esc(c.fix)}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  return `<div class="audit-group">
+    <div class="audit-group-hd" onclick="toggleGroup('${id}')">
+      <div class="audit-group-label">${label}</div>
+      <div class="audit-group-count">${items.length} item${items.length !== 1 ? 's' : ''} ▾</div>
+    </div>
+    <div class="audit-group-body ${defaultOpen ? 'open' : ''}" id="${id}">${itemsHtml}</div>
+  </div>`;
+}
+
+function toggleGroup(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.toggle('open');
+}
+
+/* ══════════════════════════════════════════════════════════
+   CONTENT TAB
+══════════════════════════════════════════════════════════ */
+function renderContent() {
+  const { profile } = S.auditData;
+  document.getElementById('tab-content').innerHTML = `
+    ${contentCard('description', 'Business Description',
+      'AI writes a 750-char description using your actual property page — no generic filler.',
+      profile.description ? `<div class="section-label">Current description</div><div class="current-text">${esc(profile.description)}</div>` : `<div class="inline-err">⚠ No description — this is hurting your ranking.</div>`
+    )}
+    ${contentCard('posts', 'Google Posts (4 posts)',
+      'Posts expire after 7 days. Generated for this specific property and current season.',
+      ''
+    )}
+    ${contentCard('faqs', 'Q&A / FAQ (8 questions)',
+      'Seeds your Q&A section with real questions guests ask, answered specifically for this property.',
+      ''
+    )}
+  `;
+}
+
+function contentCard(type, title, desc, existingHtml) {
+  const id = `content-${type}`;
+  return `<div class="content-card" id="card-${type}">
+    <div class="content-card-hd">
+      <div class="content-card-title">${title}</div>
+      <span class="status-tag tag-pending" id="status-${type}">Not generated</span>
+    </div>
+    <div class="content-card-body" id="${id}">
+      ${existingHtml}
+      <div class="generate-placeholder" id="placeholder-${type}">
+        <div class="gen-desc">${desc}</div>
+        <button class="btn btn-gold" onclick="generate('${type}')">✦ Generate with AI</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ══════════════════════════════════════════════════════════
+   GENERATE
+══════════════════════════════════════════════════════════ */
+async function generate(type) {
+  const btn = document.querySelector(`#placeholder-${type} .btn-gold`);
+  if (btn) { btn.disabled = true; btn.textContent = 'Generating…'; }
+
+  const r = await apiFetch('POST', '/api/generate', {
+    type,
+    profile: S.auditData.profile,
+  });
+
+  if (!r.ok) {
+    const err = await r.json().catch(() => ({ error: 'Generation failed' }));
+    if (btn) { btn.disabled = false; btn.textContent = '✦ Generate with AI'; }
+    alert('Generation failed: ' + err.error);
+    return;
+  }
+
+  const data = await r.json();
+  S.generated[type] = data;
+  renderGeneratedContent(type, data);
+  document.getElementById(`status-${type}`).className = 'status-tag tag-pending';
+  document.getElementById(`status-${type}`).textContent = 'Ready to publish';
+}
+
+function renderGeneratedContent(type, data) {
+  const placeholder = document.getElementById(`placeholder-${type}`);
+  if (placeholder) placeholder.style.display = 'none';
+
+  if (type === 'description') {
+    const desc = data.description || '';
+    const container = document.getElementById('content-description');
+    // Append after existing content
+    const existing = container.querySelector('.generate-placeholder');
+    const div = document.createElement('div');
+    div.id = 'gen-desc-block';
+    div.innerHTML = `
+      <div class="section-label" style="color:var(--green)">✦ AI-generated description</div>
+      <div class="generated-text" id="gen-desc-text" contenteditable="false">${esc(desc)}</div>
+      <div class="char-count" id="gen-desc-chars">${desc.length} / 750 characters</div>
+      <div class="btn-row">
+        <button class="btn btn-gold" id="pub-desc-btn" onclick="publishItem('description')">⚡ Publish to Google</button>
+        <button class="btn btn-outline" onclick="toggleEdit('gen-desc-text','gen-desc-chars',750)">Edit</button>
+        <button class="btn btn-ghost" data-copy="${esc(desc)}">Copy</button>
+      </div>
+      <div class="inline-err" id="err-description" style="display:none;margin-top:8px"></div>`;
+    container.insertBefore(div, existing || null);
+
+    // Live char counter
+    document.getElementById('gen-desc-text').addEventListener('input', function() {
+      document.getElementById('gen-desc-chars').textContent = this.textContent.length + ' / 750 characters';
+    });
+  }
+
+  else if (type === 'posts') {
+    const posts = data.items || [];
+    const container = document.getElementById('content-posts');
+    const div = document.createElement('div');
+    div.id = 'gen-posts-block';
+    div.innerHTML = `
+      <div class="posts-grid">
+        ${posts.map((p, i) => `
+          <div class="post-item">
+            <div class="post-theme">${esc(p.theme)} · ${esc(p.type)}</div>
+            <div class="post-text" id="post-text-${i}" contenteditable="false">${esc(p.text)}</div>
+            <div class="btn-row">
+              <button class="btn btn-gold" id="pub-post-${i}" onclick="publishPost(${i})">⚡ Publish</button>
+              <button class="btn btn-outline" onclick="toggleEdit('post-text-${i}',null,150)">Edit</button>
+              <button class="btn btn-ghost" data-copy="${esc(p.text)}">Copy</button>
+              <span class="status-tag tag-pending" id="post-status-${i}">Ready</span>
+            </div>
+            <div class="inline-err" id="err-post-${i}" style="display:none;margin-top:6px"></div>
+          </div>`).join('')}
+      </div>`;
+    const existing = container.querySelector('.generate-placeholder');
+    container.insertBefore(div, existing || null);
+  }
+
+  else if (type === 'faqs') {
+    const faqs = data.items || [];
+    const container = document.getElementById('content-faqs');
+    const div = document.createElement('div');
+    div.id = 'gen-faqs-block';
+    div.innerHTML = `
+      <div class="faq-list">
+        ${faqs.map((f, i) => `
+          <div class="faq-item">
+            <div class="faq-q">${esc(f.question)}</div>
+            <div class="faq-a" id="faq-a-${i}" contenteditable="false">${esc(f.answer)}</div>
+            <div class="btn-row">
+              <button class="btn btn-gold" id="pub-faq-${i}" onclick="publishFAQ(${i})">⚡ Publish Q&A</button>
+              <button class="btn btn-outline" onclick="toggleEdit('faq-a-${i}',null,0)">Edit answer</button>
+              <button class="btn btn-ghost" data-copy="${esc(f.answer)}">Copy</button>
+              <span class="status-tag tag-pending" id="faq-status-${i}">Ready</span>
+            </div>
+            <div class="inline-err" id="err-faq-${i}" style="display:none;margin-top:6px"></div>
+          </div>`).join('')}
+      </div>`;
+    const existing = container.querySelector('.generate-placeholder');
+    container.insertBefore(div, existing || null);
+  }
+}
+
+/* ══════════════════════════════════════════════════════════
+   PUBLISH
+══════════════════════════════════════════════════════════ */
+async function publishItem(type) {
+  const btn = document.getElementById(`pub-${type}-btn`);
+  if (!btn || btn.disabled) return;
+  setPublishing(btn, true);
+
+  let content;
+  if (type === 'description') {
+    content = { text: document.getElementById('gen-desc-text').textContent.trim() };
+  }
+
+  const r = await apiFetch('POST', '/api/publish', {
+    locationId: S.currentLoc.id,
+    type, content,
+  });
+  const result = await r.json();
+
+  if (!r.ok || !result.ok) {
+    setPublishing(btn, false);
+    showInlineErr(`err-${type}`, result.error || 'Publish failed');
+    return;
+  }
+  setPublishedBtn(btn, `status-${type}`);
+}
+
+async function publishPost(i) {
+  const btn = document.getElementById(`pub-post-${i}`);
+  if (!btn || btn.disabled) return;
+  setPublishing(btn, true);
+
+  const posts = S.generated.posts?.items || [];
+  const text = document.getElementById(`post-text-${i}`)?.textContent.trim();
+  const post = posts[i] || {};
+
+  const r = await apiFetch('POST', '/api/publish', {
+    locationId: S.currentLoc.id,
+    type: 'post',
+    content: { ...post, text },
+  });
+  const result = await r.json();
+
+  if (!r.ok || !result.ok) {
+    setPublishing(btn, false);
+    showInlineErr(`err-post-${i}`, result.error || 'Publish failed');
+    return;
+  }
+  setPublishedBtn(btn, `post-status-${i}`);
+}
+
+async function publishFAQ(i) {
+  const btn = document.getElementById(`pub-faq-${i}`);
+  if (!btn || btn.disabled) return;
+  setPublishing(btn, true);
+
+  const faqs = S.generated.faqs?.items || [];
+  const faq = faqs[i] || {};
+  const answer = document.getElementById(`faq-a-${i}`)?.textContent.trim();
+
+  const r = await apiFetch('POST', '/api/publish', {
+    locationId: S.currentLoc.id,
+    type: 'faq',
+    content: { question: faq.question, answer },
+  });
+  const result = await r.json();
+
+  if (!r.ok || !result.ok) {
+    setPublishing(btn, false);
+    showInlineErr(`err-faq-${i}`, result.error || 'Publish failed');
+    return;
+  }
+  setPublishedBtn(btn, `faq-status-${i}`);
+}
+
+/* ══════════════════════════════════════════════════════════
+   REVIEWS TAB
+══════════════════════════════════════════════════════════ */
+async function loadReviews() {
+  if (S.reviews) { renderReviews(); return; }
+  const tab = document.getElementById('tab-reviews');
+  tab.innerHTML = '<div class="empty"><div class="spinner" style="margin:32px auto 0"></div><div style="margin-top:12px;color:var(--muted)">Loading reviews…</div></div>';
+
+  const r = await apiFetch('GET', `/api/reviews?locationId=${encodeURIComponent(S.currentLoc.id)}`);
+  if (!r.ok) {
+    const err = await r.json().catch(() => ({ error: 'Failed to load reviews' }));
+    tab.innerHTML = `<div class="inline-err">${esc(err.error)}</div>`;
+    return;
+  }
+  S.reviews = await r.json();
+  renderReviews();
+}
+
+function renderReviews() {
+  const { reviews, total, unanswered, avgRating } = S.reviews;
+
+  // Merge queue items for display
+  const queueMap = {};
+  S.replyQueue.forEach(q => { queueMap[q.reviewId] = q; });
+
+  const unansweredReviews  = reviews.filter(r => !r.hasReply);
+  const answeredReviews    = reviews.filter(r => r.hasReply);
+
+  document.getElementById('tab-reviews').innerHTML = `
+    <div class="review-stats">
+      <div class="review-stat"><div class="review-stat-n">${total}</div><div class="review-stat-l">Total reviews</div></div>
+      <div class="review-stat"><div class="review-stat-n" style="color:var(--red)">${unanswered}</div><div class="review-stat-l">Unanswered</div></div>
+      <div class="review-stat"><div class="review-stat-n" style="color:var(--gold)">${avgRating || '—'}</div><div class="review-stat-l">Avg rating</div></div>
+    </div>
+
+    ${unansweredReviews.length ? `
+      <div class="queue-section-title">Unanswered (${unansweredReviews.length})</div>
+      ${unansweredReviews.map(rv => reviewCard(rv, queueMap[rv.id])).join('')}
+    ` : '<div class="empty"><div class="empty-icon">✅</div><p>All reviews have been replied to.</p></div>'}
+
+    ${answeredReviews.length ? `
+      <div class="queue-section-title">Answered (${answeredReviews.length})</div>
+      ${answeredReviews.slice(0, 5).map(rv => reviewCard(rv, null, true)).join('')}
+      ${answeredReviews.length > 5 ? `<div style="text-align:center;color:var(--muted);font-size:12px;padding:10px 0">…and ${answeredReviews.length - 5} more</div>` : ''}
+    ` : ''}
+  `;
+
+  // Start timers
+  S.replyQueue.forEach(q => startQueueTimer(q.reviewId));
+}
+
+function reviewCard(rv, queued, showReply) {
+  const stars = '★'.repeat(rv.stars) + '☆'.repeat(5 - rv.stars);
+  const initials = (rv.reviewer || 'A').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  const photoHtml = rv.profilePhoto
+    ? `<img src="${esc(rv.profilePhoto)}" alt="" onerror="this.parentNode.textContent='${initials}'">`
+    : initials;
+
+  const queuedHtml = queued ? `
+    <div style="margin-top:10px">
+      <div class="reply-draft" id="rdraft-${esc(rv.id)}">${esc(queued.reply)}</div>
+      <div class="btn-row">
+        ${queued.autoPostAt && rv.stars >= 3 ? `<span class="queue-timer" id="timer-${esc(rv.id)}">Auto-posts in …</span>` : ''}
+        <button class="btn btn-gold" onclick="publishReply('${esc(rv.id)}','${esc(rv.id)}')">⚡ Post now</button>
+        <button class="btn btn-outline" onclick="toggleEdit('rdraft-${esc(rv.id)}',null,0)">Edit</button>
+        <button class="btn btn-ghost" onclick="cancelQueueItem('${esc(rv.id)}')">Cancel</button>
+      </div>
+    </div>` : '';
+
+  const existingReplyHtml = showReply && rv.replyText ? `
+    <div style="margin-top:8px;padding:8px 12px;background:var(--surface);border-radius:6px;border-left:2px solid var(--green)">
+      <div class="section-label">Your reply</div>
+      <div style="font-size:12.5px;color:var(--muted);line-height:1.55">${esc(rv.replyText)}</div>
+    </div>` : '';
+
+  return `<div class="review-card" id="rcard-${esc(rv.id)}">
+    <div class="review-card-hd">
+      <div class="review-avatar">${photoHtml}</div>
+      <div style="flex:1;min-width:0">
+        <div class="review-name">${esc(rv.reviewer)}</div>
+        <div class="review-date">${formatDate(rv.date)}</div>
+      </div>
+      <div class="stars" style="color:${rv.stars >= 4 ? 'var(--gold)' : rv.stars === 3 ? 'var(--warn)' : 'var(--red)'}">${stars}</div>
+    </div>
+    ${rv.text ? `<div class="review-text">${esc(rv.text)}</div>` : '<div class="review-text" style="font-style:italic">No review text.</div>'}
+    ${existingReplyHtml}
+    ${!queued && !showReply ? `<div class="btn-row" id="gen-reply-row-${esc(rv.id)}">
+      <button class="btn btn-gold" onclick="generateReply('${esc(rv.id)}')">✦ Generate reply</button>
+      <div class="inline-err" id="err-reply-${esc(rv.id)}" style="display:none"></div>
+    </div>` : ''}
+    ${queuedHtml}
+    <div class="inline-err" id="err-pub-reply-${esc(rv.id)}" style="display:none;margin-top:8px"></div>
+  </div>`;
+}
+
+async function generateReply(reviewId) {
+  const btn = document.querySelector(`#gen-reply-row-${reviewId} .btn-gold`);
+  if (btn) { btn.disabled = true; btn.textContent = 'Generating…'; }
+
+  const review = S.reviews.reviews.find(r => r.id === reviewId);
+  if (!review) return;
+
+  const r = await apiFetch('POST', '/api/generate', {
+    type: 'reply',
+    profile: S.auditData.profile,
+    reviewText:   review.text,
+    reviewStars:  review.stars,
+    reviewerName: review.reviewer,
+    trainingExamples: S.training,
+  });
+
+  if (!r.ok) {
+    const err = await r.json().catch(() => ({ error: 'Generation failed' }));
+    if (btn) { btn.disabled = false; btn.textContent = '✦ Generate reply'; }
+    showInlineErr(`err-reply-${reviewId}`, err.error || 'Generation failed');
+    return;
+  }
+
+  const data = await r.json();
+  const reply = data.reply || '';
+
+  // Determine auto-post delay based on star rating
+  const delays = { 5: 2*3600000, 4: 4*3600000, 3: 24*3600000 };
+  const delay   = delays[review.stars] || null;
+  const autoPostAt = delay ? Date.now() + delay : null;
+
+  // 1-2 star: no auto-post, manual only
+  const queueItem = {
+    reviewId,
+    locationId: S.currentLoc.id,
+    reply,
+    stars: review.stars,
+    generatedAt: Date.now(),
+    autoPostAt: review.stars >= 3 ? autoPostAt : null,
+    status: 'pending',
+  };
+
+  S.replyQueue = S.replyQueue.filter(q => q.reviewId !== reviewId);
+  S.replyQueue.push(queueItem);
+  saveLS('sv_reply_queue', S.replyQueue);
+
+  // Re-render reviews to show draft + timer
+  renderReviews();
+  if (review.stars >= 3 && autoPostAt) startQueueTimer(reviewId);
+}
+
+async function publishReply(reviewId, draftId) {
+  const btn = event.target;
+  if (btn) { btn.disabled = true; btn.textContent = 'Posting…'; }
+
+  const reply = document.getElementById(`rdraft-${draftId}`)?.textContent?.trim()
+    || S.replyQueue.find(q => q.reviewId === reviewId)?.reply;
+  if (!reply) { if(btn){btn.disabled=false;btn.textContent='⚡ Post now';} return; }
+
+  const r = await apiFetch('POST', '/api/publish', {
+    locationId: S.currentLoc.id,
+    type: 'reply',
+    content: { reviewName: reviewId, reply },
+  });
+  const result = await r.json();
+
+  if (!r.ok || !result.ok) {
+    if (btn) { btn.disabled = false; btn.textContent = '⚡ Post now'; }
+    showInlineErr(`err-pub-reply-${reviewId}`, result.error || 'Failed to post reply');
+    return;
+  }
+
+  // Remove from queue, mark review as answered
+  S.replyQueue = S.replyQueue.filter(q => q.reviewId !== reviewId);
+  saveLS('sv_reply_queue', S.replyQueue);
+  const rv = S.reviews.reviews.find(r => r.id === reviewId);
+  if (rv) { rv.hasReply = true; rv.replyText = reply; }
+  S.reviews.unanswered = Math.max(0, S.reviews.unanswered - 1);
+  renderReviews();
+}
+
+function cancelQueueItem(reviewId) {
+  S.replyQueue = S.replyQueue.filter(q => q.reviewId !== reviewId);
+  saveLS('sv_reply_queue', S.replyQueue);
+  renderReviews();
+}
+
+function startQueueTimer(reviewId) {
+  const q = S.replyQueue.find(i => i.reviewId === reviewId);
+  if (!q || !q.autoPostAt) return;
+
+  const tick = () => {
+    const el = document.getElementById(`timer-${reviewId}`);
+    if (!el) return;
+    const remaining = q.autoPostAt - Date.now();
+    if (remaining <= 0) {
+      clearInterval(interval);
+      processReplyQueue();
+      return;
+    }
+    const h = Math.floor(remaining / 3600000);
+    const m = Math.floor((remaining % 3600000) / 60000);
+    const s = Math.floor((remaining % 60000) / 1000);
+    el.textContent = `Auto-posts in ${h > 0 ? h + 'h ' : ''}${m}m ${s}s`;
+  };
+  tick();
+  const interval = setInterval(tick, 1000);
+}
+
+async function processReplyQueue() {
+  const due = S.replyQueue.filter(q =>
+    q.status === 'pending' && q.autoPostAt && q.autoPostAt <= Date.now()
+  );
+  for (const item of due) {
+    try {
+      const r = await apiFetch('POST', '/api/publish', {
+        locationId: item.locationId,
+        type: 'reply',
+        content: { reviewName: item.reviewId, reply: item.reply },
+      });
+      if (r.ok) {
+        S.replyQueue = S.replyQueue.filter(q => q.reviewId !== item.reviewId);
+        saveLS('sv_reply_queue', S.replyQueue);
+      }
+    } catch { /* non-fatal */ }
+  }
+}
+
+/* ══════════════════════════════════════════════════════════
+   TRAINING TAB
+══════════════════════════════════════════════════════════ */
+function renderTraining() {
+  document.getElementById('tab-training').innerHTML = `
+    <div class="training-intro">
+      <strong>Teach the AI your team's voice.</strong><br>
+      Add real reviews your team has responded to. The AI studies these examples and replies in the same tone — not a generic hospitality voice.
+      Aim for 5+ examples covering different star ratings.
+    </div>
+    <div class="training-form">
+      <div>
+        <div class="training-label">Customer review</div>
+        <textarea class="field" id="ex-review" placeholder="Paste a real Google review here…" rows="4"></textarea>
+      </div>
+      <div>
+        <div class="training-label">Your team's reply</div>
+        <textarea class="field" id="ex-reply" placeholder="Paste how your team actually replied…" rows="4"></textarea>
+      </div>
+    </div>
+    <button class="btn btn-gold" onclick="addTrainingExample()">+ Add example</button>
+    <div class="example-list" id="example-list"></div>
+  `;
+  renderExampleList();
+}
+
+function renderExampleList() {
+  const list = document.getElementById('example-list');
+  if (!list) return;
+  if (!S.training.length) {
+    list.innerHTML = '<div class="empty" style="padding:16px 0"><div class="empty-icon">💬</div><p>No examples yet. Add at least 3 for best results.</p></div>';
+    return;
+  }
+  list.innerHTML = `
+    <div class="queue-section-title">${S.training.length} example${S.training.length !== 1 ? 's' : ''} saved</div>
+    ${S.training.map((ex, i) => `
+      <div class="example-item">
+        <div class="example-col"><strong>Review</strong>${esc(ex.review.slice(0, 120))}${ex.review.length > 120 ? '…' : ''}</div>
+        <div class="example-col"><strong>Reply</strong>${esc(ex.reply.slice(0, 120))}${ex.reply.length > 120 ? '…' : ''}</div>
+        <button class="del-btn" onclick="deleteExample(${i})" title="Remove">✕</button>
+      </div>`).join('')}
+  `;
+}
+
+function addTrainingExample() {
+  const review = document.getElementById('ex-review')?.value.trim();
+  const reply  = document.getElementById('ex-reply')?.value.trim();
+  if (!review || !reply) { alert('Both fields are required.'); return; }
+  S.training.push({ review, reply });
+  saveLS('sv_training', S.training);
+  document.getElementById('ex-review').value = '';
+  document.getElementById('ex-reply').value  = '';
+  renderExampleList();
+}
+
+function deleteExample(i) {
+  S.training.splice(i, 1);
+  saveLS('sv_training', S.training);
+  renderExampleList();
+}
+
+/* ══════════════════════════════════════════════════════════
+   NAVIGATION HELPERS
+══════════════════════════════════════════════════════════ */
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.tab === name);
+  });
+  ['overview','content','reviews','training'].forEach(n => {
+    const el = document.getElementById(`tab-${n}`);
+    if (el) el.style.display = n === name ? 'block' : 'none';
+  });
+  if (name === 'reviews') loadReviews();
+}
+
+function goBack() {
+  showScreen('locations');
+}
+
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById(`screen-${name}`);
+  if (el) el.classList.add('active');
+}
+
+function startLoading(title, sub, steps) {
+  document.getElementById('load-title').textContent = title;
+  document.getElementById('load-sub').textContent = sub;
+  const stepsEl = document.getElementById('load-steps');
+  stepsEl.innerHTML = steps.map((s, i) => `<div class="load-step ${i === 0 ? 's-active' : ''}" id="ls-${i}">○ ${s}</div>`).join('');
+  showScreen('loading');
+
+  let idx = 0;
+  const iv = setInterval(() => {
+    const prev = document.getElementById(`ls-${idx - 1}`);
+    if (prev) { prev.className = 'load-step s-done'; prev.textContent = '✓ ' + prev.textContent.slice(2); }
+    idx++;
+    const cur = document.getElementById(`ls-${idx}`);
+    if (cur) { cur.className = 'load-step s-active'; cur.textContent = '→ ' + cur.textContent.slice(2); }
+    if (idx >= steps.length) clearInterval(iv);
+  }, 600);
+}
+
+/* ══════════════════════════════════════════════════════════
+   UI HELPERS
+══════════════════════════════════════════════════════════ */
+function toggleEdit(elId, charCountId, maxLen) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  const editing = el.contentEditable === 'true';
+  el.contentEditable = editing ? 'false' : 'true';
+  el.style.cursor = editing ? '' : 'text';
+  if (!editing) el.focus();
+}
+
+function setPublishing(btn, on) {
+  btn.disabled = on;
+  btn.textContent = on ? 'Publishing…' : '⚡ Publish to Google';
+}
+
+function setPublishedBtn(btn, statusId) {
+  btn.textContent = '✓ Published';
+  btn.style.background = 'var(--green)';
+  btn.style.color = '#fff';
+  btn.disabled = true;
+  const s = document.getElementById(statusId);
+  if (s) { s.className = 'status-tag tag-live'; s.textContent = '✓ Live on Google'; }
+}
+
+function showInlineErr(id, msg) {
+  const el = document.getElementById(id);
+  if (el) { el.textContent = msg; el.style.display = 'block'; }
+}
+
+function formatDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function esc(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+/* ══════════════════════════════════════════════════════════
+   API FETCH WRAPPER
+══════════════════════════════════════════════════════════ */
+async function apiFetch(method, path, body) {
+  const opts = {
+    method,
+    headers: {},
+    credentials: 'same-origin',
+  };
+  if (body) {
+    opts.headers['Content-Type'] = 'application/json';
+    opts.body = JSON.stringify(body);
+  }
+  try {
+    return await fetch(path, opts);
+  } catch (err) {
+    // Return a fake Response so callers can handle uniformly
+    return new Response(JSON.stringify({ error: 'Network error: ' + err.message }), {
+      status: 500, headers: { 'Content-Type': 'application/json' },
+    });
+  }
+}
+
+/* ══════════════════════════════════════════════════════════
+   COPY BUTTON DELEGATED HANDLER
+══════════════════════════════════════════════════════════ */
+document.addEventListener('click', e => {
+  const btn = e.target.closest('[data-copy]');
+  if (!btn) return;
+  const text = btn.getAttribute('data-copy');
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = orig, 1500);
+  }).catch(() => {
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = orig, 1500);
+  });
+});
+</script>
+</body>
+</html>
